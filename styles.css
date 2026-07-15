@@ -259,6 +259,15 @@ textarea {
   min-height: 76px;
 }
 
+input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -307,6 +316,102 @@ button:hover {
   border: 1px solid #f0b8b2;
   background: #fff5f4;
   color: var(--danger);
+}
+
+.upload-field {
+  display: grid;
+  gap: 10px;
+  border: 1px dashed rgba(31, 95, 81, 0.24);
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(232, 240, 235, 0.42), rgba(255, 255, 255, 0.54));
+}
+
+.upload-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.upload-copy strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.upload-copy span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.upload-control {
+  width: fit-content;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(31, 95, 81, 0.24);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--primary-dark);
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(26, 52, 43, 0.06);
+}
+
+.upload-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.upload-preview:empty {
+  display: none;
+}
+
+.preview-card {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(38, 55, 47, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(35, 50, 42, 0.08);
+}
+
+.preview-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: cover;
+}
+
+.preview-card figcaption {
+  overflow: hidden;
+  padding: 6px 8px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-image {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 1px solid rgba(20, 28, 24, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--danger);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .tools {
@@ -431,6 +536,41 @@ button:hover {
   border-left-color: var(--gold);
 }
 
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.image-gallery[hidden] {
+  display: none;
+}
+
+.image-gallery a {
+  overflow: hidden;
+  border: 1px solid rgba(38, 55, 47, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(35, 50, 42, 0.09);
+}
+
+.image-gallery img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.image-gallery a:hover img {
+  transform: scale(1.03);
+}
+
+.empty-note {
+  color: var(--muted);
+}
+
 ul {
   margin: 10px 0 0;
   padding-left: 20px;
@@ -536,6 +676,10 @@ dialog::backdrop {
   line-height: 1.7;
 }
 
+.report-gallery {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
 .report-actions {
   display: flex;
   justify-content: flex-end;
@@ -604,6 +748,14 @@ dialog::backdrop {
 
   .tools input {
     min-width: 0;
+  }
+
+  .upload-copy {
+    display: grid;
+  }
+
+  .upload-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .lesson-toggle {

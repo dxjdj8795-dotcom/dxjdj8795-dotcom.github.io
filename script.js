@@ -21,6 +21,14 @@ const reportMeta = document.querySelector("#reportMeta");
 const reportGrid = document.querySelector("#reportGrid");
 
 let editingId = null;
+const imageFields = ["contentImages", "homeworkImages"];
+const maxImagesPerField = 6;
+const maxImageFileSize = 10 * 1024 * 1024;
+const maxImageSide = 1600;
+let draftImages = {
+  contentImages: [],
+  homeworkImages: [],
+};
 
 const lessonNoOptions = [
   "第一课",
@@ -124,27 +132,36 @@ function normalizeLesson(lesson, index = 0) {
     student: lesson.student || "未填写学生",
     lessonNo: lesson.lessonNo || lesson.courseNo || lesson.lessonCount || defaultLessonNo(index),
     content: lesson.content || "",
+    contentImages: normalizeImages(lesson.contentImages),
     homework: lesson.homework || "",
+    homeworkImages: normalizeImages(lesson.homeworkImages),
   };
 }
 
 function loadLessons() {
   const saved = localStorage.getItem(storageKey);
   if (!saved) {
-    saveLessons(sampleLessons);
-    return sampleLessons;
+    const defaultLessons = sampleLessons.map(normalizeLesson);
+    saveLessons(defaultLessons);
+    return defaultLessons;
   }
 
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed.map(normalizeLesson) : sampleLessons;
+    return Array.isArray(parsed) ? parsed.map(normalizeLesson) : sampleLessons.map(normalizeLesson);
   } catch {
-    return sampleLessons;
+    return sampleLessons.map(normalizeLesson);
   }
 }
 
 function saveLessons(lessons) {
-  localStorage.setItem(storageKey, JSON.stringify(lessons.map(normalizeLesson)));
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(lessons.map(normalizeLesson)));
+    return true;
+  } catch {
+    window.alert("图片数据太大，当前浏览器保存不下。请删除几张图片，或换成更小的截图后再保存。");
+    return false;
+  }
 }
 
 function splitLines(value) {
@@ -165,17 +182,31 @@ function formatDate(value) {
   return `${day} ${weekday}`;
 }
 
-function fillList(list, text) {
+function fillList(list, text, hasImages = false) {
   list.innerHTML = "";
-  splitLines(text).forEach((item) => {
+  const lines = splitLines(text);
+  if (!lines.length && hasImages) {
+    const li = document.createElement("li");
+    li.className = "empty-note";
+    li.textContent = "见下方图片。";
+    list.append(li);
+    return;
+  }
+
+  lines.forEach((item) => {
     const li = document.createElement("li");
     li.textContent = item;
     list.append(li);
   });
 }
 
-function listMarkup(text) {
-  return `<ul>${splitLines(text)
+function listMarkup(text, images = []) {
+  const lines = splitLines(text);
+  if (!lines.length && normalizeImages(images).length) {
+    return `<p class="empty-note">见下方图片。</p>`;
+  }
+
+  return `<ul>${lines
     .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join("")}</ul>`;
 }
@@ -191,7 +222,174 @@ function escapeHtml(value) {
 
 function matchesLesson(lesson, keyword) {
   if (!keyword) return true;
-  return Object.values(lesson).join(" ").toLowerCase().includes(keyword.toLowerCase());
+  const haystack = [
+    lesson.date,
+    lesson.student,
+    lesson.lessonNo,
+    lesson.content,
+    lesson.homework,
+    ...normalizeImages(lesson.contentImages).map((image) => image.name),
+    ...normalizeImages(lesson.homeworkImages).map((image) => image.name),
+  ].join(" ");
+  return haystack.toLowerCase().includes(keyword.toLowerCase());
+}
+
+function normalizeImages(images) {
+  if (!Array.isArray(images)) return [];
+  return images
+    .filter((image) => image && typeof image.src === "string" && image.src.startsWith("data:image/"))
+    .map((image) => ({
+      id: image.id || createId(),
+      name: image.name || "图片",
+      src: image.src,
+    }));
+}
+
+function setDraftImages(nextImages = {}) {
+  draftImages = {
+    contentImages: normalizeImages(nextImages.contentImages),
+    homeworkImages: normalizeImages(nextImages.homeworkImages),
+  };
+  imageFields.forEach(renderImagePreview);
+}
+
+function fileToCompressedImage(file) {
+  if (!file.type.startsWith("image/")) {
+    return Promise.reject(new Error(`${file.name} 不是图片文件。`));
+  }
+
+  if (file.size > maxImageFileSize) {
+    return Promise.reject(new Error(`${file.name} 超过 10MB，请先压缩后再上传。`));
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`${file.name} 读取失败。`));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error(`${file.name} 无法识别，请换一张常见格式图片。`));
+      image.onload = () => {
+        const scale = Math.min(1, maxImageSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        resolve({
+          id: createId(),
+          name: file.name || "图片",
+          src: canvas.toDataURL("image/jpeg", 0.82),
+        });
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderImagePreview(field) {
+  const preview = document.querySelector(`[data-preview="${field}"]`);
+  if (!preview) return;
+
+  preview.innerHTML = "";
+  draftImages[field].forEach((image, index) => {
+    const card = document.createElement("figure");
+    card.className = "preview-card";
+
+    const img = document.createElement("img");
+    img.src = image.src;
+    img.alt = image.name;
+
+    const remove = document.createElement("button");
+    remove.className = "remove-image";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `删除${image.name}`);
+    remove.addEventListener("click", () => {
+      draftImages[field].splice(index, 1);
+      renderImagePreview(field);
+    });
+
+    const caption = document.createElement("figcaption");
+    caption.textContent = image.name;
+
+    card.append(img, remove, caption);
+    preview.append(card);
+  });
+}
+
+function setupImageInput(field) {
+  const input = document.querySelector(`#${field}`);
+  if (!input) return;
+
+  input.addEventListener("change", async () => {
+    const files = Array.from(input.files || []);
+    if (!files.length) return;
+
+    const availableSlots = maxImagesPerField - draftImages[field].length;
+    if (availableSlots <= 0) {
+      window.alert("这一栏最多上传 6 张图片。");
+      input.value = "";
+      return;
+    }
+
+    const selectedFiles = files.slice(0, availableSlots);
+    try {
+      const nextImages = [];
+      for (const file of selectedFiles) {
+        nextImages.push(await fileToCompressedImage(file));
+      }
+      draftImages[field] = [...draftImages[field], ...nextImages];
+      if (files.length > availableSlots) {
+        window.alert("这一栏最多上传 6 张图片，超出的图片没有加入。");
+      }
+    } catch (error) {
+      window.alert(error.message || "图片上传失败，请换一张图片。");
+    } finally {
+      input.value = "";
+      renderImagePreview(field);
+    }
+  });
+}
+
+function fillGallery(gallery, images) {
+  const normalizedImages = normalizeImages(images);
+  gallery.innerHTML = "";
+  gallery.hidden = !normalizedImages.length;
+
+  normalizedImages.forEach((image) => {
+    const link = document.createElement("a");
+    link.href = image.src;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.title = "点击查看大图";
+
+    const img = document.createElement("img");
+    img.src = image.src;
+    img.alt = image.name;
+
+    link.append(img);
+    gallery.append(link);
+  });
+}
+
+function galleryMarkup(images) {
+  const normalizedImages = normalizeImages(images);
+  if (!normalizedImages.length) return "";
+
+  return `<div class="image-gallery report-gallery">${normalizedImages
+    .map(
+      (image) => `
+        <a href="${escapeHtml(image.src)}" target="_blank" rel="noopener" title="点击查看大图">
+          <img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.name)}" />
+        </a>
+      `,
+    )
+    .join("")}</div>`;
 }
 
 function updateSummary(allLessons) {
@@ -223,8 +421,10 @@ function renderLessons() {
     node.querySelector(".date").textContent = formatDate(lesson.date);
     node.querySelector(".lesson-no").textContent = lesson.lessonNo;
     node.querySelector(".student").textContent = lesson.student;
-    fillList(node.querySelector(".content"), lesson.content);
-    fillList(node.querySelector(".homework"), lesson.homework);
+    fillList(node.querySelector(".content"), lesson.content, lesson.contentImages.length > 0);
+    fillList(node.querySelector(".homework"), lesson.homework, lesson.homeworkImages.length > 0);
+    fillGallery(node.querySelector('[data-gallery="contentImages"]'), lesson.contentImages);
+    fillGallery(node.querySelector('[data-gallery="homeworkImages"]'), lesson.homeworkImages);
 
     node.querySelector(".lesson-toggle").addEventListener("click", () => {
       node.classList.toggle("open");
@@ -241,6 +441,10 @@ function renderLessons() {
       form.lessonNo.value = lesson.lessonNo;
       form.content.value = lesson.content;
       form.homework.value = lesson.homework;
+      setDraftImages({
+        contentImages: lesson.contentImages,
+        homeworkImages: lesson.homeworkImages,
+      });
       form.querySelector(".primary").textContent = "更新反馈";
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -248,7 +452,7 @@ function renderLessons() {
     node.querySelector(".delete").addEventListener("click", () => {
       const confirmed = window.confirm(`确定删除 ${formatDate(lesson.date)} 的反馈吗？`);
       if (!confirmed) return;
-      saveLessons(loadLessons().filter((item) => item.id !== lesson.id));
+      if (!saveLessons(loadLessons().filter((item) => item.id !== lesson.id))) return;
       if (editingId === lesson.id) clearForm();
       renderLessons();
     });
@@ -268,12 +472,14 @@ function openFamilyReport(lesson) {
     <section>
       <h3>课程反馈</h3>
       <p>这节课主要学习：</p>
-      ${listMarkup(lesson.content)}
+      ${listMarkup(lesson.content, lesson.contentImages)}
+      ${galleryMarkup(lesson.contentImages)}
     </section>
     <section>
       <h3>作业安排</h3>
       <p>课后需要完成：</p>
-      ${listMarkup(lesson.homework)}
+      ${listMarkup(lesson.homework, lesson.homeworkImages)}
+      ${galleryMarkup(lesson.homeworkImages)}
     </section>
   `;
   familyDialog.showModal();
@@ -284,24 +490,40 @@ function clearForm() {
   form.reset();
   form.lessonNo.value = "第一课";
   form.date.valueAsDate = new Date();
+  setDraftImages();
   form.querySelector(".primary").textContent = "保存反馈";
 }
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(form);
+  const content = formData.get("content").trim();
+  const homework = formData.get("homework").trim();
+
+  if (!content && !draftImages.contentImages.length) {
+    window.alert("请填写课程反馈，或上传课程反馈图片。");
+    return;
+  }
+
+  if (!homework && !draftImages.homeworkImages.length) {
+    window.alert("请填写作业安排，或上传作业安排图片。");
+    return;
+  }
+
   const lesson = normalizeLesson({
     id: editingId || createId(),
     date: formData.get("date"),
     student: formData.get("student").trim(),
     lessonNo: formData.get("lessonNo"),
-    content: formData.get("content").trim(),
-    homework: formData.get("homework").trim(),
+    content,
+    contentImages: draftImages.contentImages,
+    homework,
+    homeworkImages: draftImages.homeworkImages,
   });
 
   const lessons = loadLessons();
   const nextLessons = editingId ? lessons.map((item) => (item.id === editingId ? lesson : item)) : [...lessons, lesson];
-  saveLessons(nextLessons);
+  if (!saveLessons(nextLessons)) return;
   clearForm();
   renderLessons();
 });
@@ -333,5 +555,6 @@ exportData.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
+imageFields.forEach(setupImageInput);
 clearForm();
 renderLessons();

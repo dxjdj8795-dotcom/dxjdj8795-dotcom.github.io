@@ -104,13 +104,37 @@
 
           <label>
             课程反馈：这节课学了什么
-            <textarea id="content" name="content" rows="4" placeholder="逐条写清知识点、方法、易错点。每行一条，家长查看时会自动分点展示。" required></textarea>
+            <textarea id="content" name="content" rows="4" placeholder="逐条写清知识点、方法、易错点。每行一条，家长查看时会自动分点展示。"></textarea>
           </label>
+
+          <div class="upload-field">
+            <div class="upload-copy">
+              <strong>课程反馈图片</strong>
+              <span>可上传课堂笔记、讲义或题目截图。</span>
+            </div>
+            <label class="upload-control">
+              选择图片
+              <input id="contentImages" name="contentImages" type="file" accept="image/*" multiple />
+            </label>
+            <div class="upload-preview" data-preview="contentImages"></div>
+          </div>
 
           <label>
             作业安排
-            <textarea id="homework" name="homework" rows="3" placeholder="写明页码、题号、提交要求。" required></textarea>
+            <textarea id="homework" name="homework" rows="3" placeholder="写明页码、题号、提交要求。"></textarea>
           </label>
+
+          <div class="upload-field">
+            <div class="upload-copy">
+              <strong>作业安排图片</strong>
+              <span>可上传作业页、题目范围或订正要求。</span>
+            </div>
+            <label class="upload-control">
+              选择图片
+              <input id="homeworkImages" name="homeworkImages" type="file" accept="image/*" multiple />
+            </label>
+            <div class="upload-preview" data-preview="homeworkImages"></div>
+          </div>
 
           <button class="primary" type="submit">保存反馈</button>
         </form>
@@ -145,10 +169,12 @@
             <section>
               <h3>课程反馈：这节课学了什么</h3>
               <ul class="content"></ul>
+              <div class="image-gallery" data-gallery="contentImages"></div>
             </section>
             <section>
               <h3>作业安排</h3>
               <ul class="homework"></ul>
+              <div class="image-gallery" data-gallery="homeworkImages"></div>
             </section>
           </div>
 
