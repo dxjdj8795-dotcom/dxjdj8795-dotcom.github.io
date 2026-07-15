@@ -18,7 +18,6 @@ const closeDialog = document.querySelector("#closeDialog");
 const printReport = document.querySelector("#printReport");
 const reportTitle = document.querySelector("#reportTitle");
 const reportMeta = document.querySelector("#reportMeta");
-const reportStatus = document.querySelector("#reportStatus");
 const reportGrid = document.querySelector("#reportGrid");
 
 let editingId = null;
@@ -106,12 +105,7 @@ const sampleLessons = [
     student: "张同学",
     lessonNo: "第二课",
     content: "复习分数乘除法的数量关系\n讲解如何找单位“1”\n整理“已知部分求整体”和“已知整体求部分”的解题步骤",
-    questions: "课本 P38 第 2、4、6 题\n补充练习：单位“1”判断 5 题\n错题讲评：把比较量当成单位“1”的题型",
     homework: "完成练习册 P21 第 1-6 题\n订正课堂错题，并写出错因",
-    homeworkFeedback: "上次作业整体完成及时\n第 3、5 题单位“1”判断不稳定\n订正时需要写出完整数量关系",
-    status: "基本掌握",
-    priority: "订正错题",
-    nextPlan: "下次课先用 8 分钟做单位“1”口头判断训练，再做 2 道综合应用题。",
   },
   {
     id: createId(),
@@ -119,12 +113,7 @@ const sampleLessons = [
     student: "张同学",
     lessonNo: "第一课",
     content: "讲解段落中心句的寻找方法\n练习用关键词压缩长句\n区分事实信息和作者观点",
-    questions: "阅读短文《桥》\n完成 4 道信息提取题\n讲评第 3 题：答案必须回到原文定位",
     homework: "完成阅读训练一篇\n每段写一句段意，答案旁标原文依据",
-    homeworkFeedback: "作业能按时完成\n概括段意时句子偏长\n需要继续练习用一句话表达核心意思",
-    status: "需要巩固",
-    priority: "复习课堂笔记",
-    nextPlan: "下次课重点训练“一句话段意”，并检查作业中的原文依据标注。",
   },
 ];
 
@@ -135,12 +124,7 @@ function normalizeLesson(lesson, index = 0) {
     student: lesson.student || "未填写学生",
     lessonNo: lesson.lessonNo || lesson.courseNo || lesson.lessonCount || defaultLessonNo(index),
     content: lesson.content || "",
-    questions: lesson.questions || "",
     homework: lesson.homework || "",
-    homeworkFeedback: lesson.homeworkFeedback || "暂未填写作业反馈。",
-    status: lesson.status || "基本掌握",
-    priority: lesson.priority || "按时完成作业",
-    nextPlan: lesson.nextPlan || lesson.feedback || "下次课继续跟进本节课薄弱点。",
   };
 }
 
@@ -239,14 +223,8 @@ function renderLessons() {
     node.querySelector(".date").textContent = formatDate(lesson.date);
     node.querySelector(".lesson-no").textContent = lesson.lessonNo;
     node.querySelector(".student").textContent = lesson.student;
-    node.querySelector(".badge").textContent = lesson.status;
-    node.querySelector(".lessonLine").textContent = lesson.lessonNo;
-    node.querySelector(".priorityLine").textContent = lesson.priority;
     fillList(node.querySelector(".content"), lesson.content);
-    fillList(node.querySelector(".questions"), lesson.questions);
     fillList(node.querySelector(".homework"), lesson.homework);
-    fillList(node.querySelector(".homeworkFeedback"), lesson.homeworkFeedback);
-    fillList(node.querySelector(".nextPlan"), lesson.nextPlan);
 
     node.querySelector(".lesson-toggle").addEventListener("click", () => {
       node.classList.toggle("open");
@@ -262,12 +240,7 @@ function renderLessons() {
       form.student.value = lesson.student;
       form.lessonNo.value = lesson.lessonNo;
       form.content.value = lesson.content;
-      form.questions.value = lesson.questions;
       form.homework.value = lesson.homework;
-      form.homeworkFeedback.value = lesson.homeworkFeedback;
-      form.status.value = lesson.status;
-      form.priority.value = lesson.priority;
-      form.nextPlan.value = lesson.nextPlan;
       form.querySelector(".primary").textContent = "更新反馈";
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -291,10 +264,6 @@ function openFamilyReport(lesson) {
     <span>${escapeHtml(lesson.lessonNo)}</span>
     <span>本节课后反馈</span>
   `;
-  reportStatus.innerHTML = `
-    <strong>${escapeHtml(lesson.status)}</strong>
-    <span>家长重点关注：${escapeHtml(lesson.priority)}</span>
-  `;
   reportGrid.innerHTML = `
     <section>
       <h3>课程反馈</h3>
@@ -302,23 +271,9 @@ function openFamilyReport(lesson) {
       ${listMarkup(lesson.content)}
     </section>
     <section>
-      <h3>课堂完成</h3>
-      <p>课堂上完成了：</p>
-      ${listMarkup(lesson.questions)}
-    </section>
-    <section>
       <h3>作业安排</h3>
       <p>课后需要完成：</p>
       ${listMarkup(lesson.homework)}
-    </section>
-    <section>
-      <h3>作业反馈</h3>
-      <p>本次作业情况：</p>
-      ${listMarkup(lesson.homeworkFeedback)}
-    </section>
-    <section>
-      <h3>下次课跟进</h3>
-      <p>${escapeHtml(lesson.nextPlan)}</p>
     </section>
   `;
   familyDialog.showModal();
@@ -327,8 +282,6 @@ function openFamilyReport(lesson) {
 function clearForm() {
   editingId = null;
   form.reset();
-  form.status.value = "基本掌握";
-  form.priority.value = "按时完成作业";
   form.lessonNo.value = "第一课";
   form.date.valueAsDate = new Date();
   form.querySelector(".primary").textContent = "保存反馈";
@@ -343,12 +296,7 @@ form.addEventListener("submit", (event) => {
     student: formData.get("student").trim(),
     lessonNo: formData.get("lessonNo"),
     content: formData.get("content").trim(),
-    questions: formData.get("questions").trim(),
     homework: formData.get("homework").trim(),
-    homeworkFeedback: formData.get("homeworkFeedback").trim(),
-    status: formData.get("status"),
-    priority: formData.get("priority"),
-    nextPlan: formData.get("nextPlan").trim(),
   });
 
   const lessons = loadLessons();
