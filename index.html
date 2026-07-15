@@ -56,10 +56,37 @@
             </label>
           </div>
 
-          <label>
-            本节课主题
-            <input id="topic" name="topic" type="text" placeholder="例如：一元一次方程应用题" required />
-          </label>
+          <div class="field-row lesson-meta-row">
+            <label>
+              课程次数
+              <select id="lessonNo" name="lessonNo" required>
+                <option value="第一课">第一课</option>
+                <option value="第二课">第二课</option>
+                <option value="第三课">第三课</option>
+                <option value="第四课">第四课</option>
+                <option value="第五课">第五课</option>
+                <option value="第六课">第六课</option>
+                <option value="第七课">第七课</option>
+                <option value="第八课">第八课</option>
+                <option value="第九课">第九课</option>
+                <option value="第十课">第十课</option>
+                <option value="第十一课">第十一课</option>
+                <option value="第十二课">第十二课</option>
+                <option value="第十三课">第十三课</option>
+                <option value="第十四课">第十四课</option>
+                <option value="第十五课">第十五课</option>
+                <option value="第十六课">第十六课</option>
+                <option value="第十七课">第十七课</option>
+                <option value="第十八课">第十八课</option>
+                <option value="第十九课">第十九课</option>
+                <option value="第二十课">第二十课</option>
+              </select>
+            </label>
+            <label>
+              本节课主题
+              <input id="topic" name="topic" type="text" placeholder="例如：一元一次方程应用题" required />
+            </label>
+          </div>
 
           <label>
             课程反馈：这节课学了什么
@@ -131,6 +158,7 @@
       <article class="lesson">
         <button class="lesson-toggle" type="button">
           <span class="date"></span>
+          <span class="lesson-no"></span>
           <span class="student"></span>
           <span class="topic"></span>
           <span class="badge"></span>

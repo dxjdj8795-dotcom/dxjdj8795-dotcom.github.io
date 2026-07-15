@@ -23,6 +23,33 @@ const reportGrid = document.querySelector("#reportGrid");
 
 let editingId = null;
 
+const lessonNoOptions = [
+  "第一课",
+  "第二课",
+  "第三课",
+  "第四课",
+  "第五课",
+  "第六课",
+  "第七课",
+  "第八课",
+  "第九课",
+  "第十课",
+  "第十一课",
+  "第十二课",
+  "第十三课",
+  "第十四课",
+  "第十五课",
+  "第十六课",
+  "第十七课",
+  "第十八课",
+  "第十九课",
+  "第二十课",
+];
+
+function defaultLessonNo(index = 0) {
+  return lessonNoOptions[index] || `第${index + 1}课`;
+}
+
 function normalizePassword(value) {
   return String(value).trim().toLowerCase().replace(/\s+/g, "");
 }
@@ -57,6 +84,7 @@ const sampleLessons = [
     id: createId(),
     date: "2026-07-15",
     student: "张同学",
+    lessonNo: "第二课",
     topic: "分数应用题与单位“1”的判断",
     content: "复习分数乘除法的数量关系\n讲解如何找单位“1”\n整理“已知部分求整体”和“已知整体求部分”的解题步骤",
     questions: "课本 P38 第 2、4、6 题\n补充练习：单位“1”判断 5 题\n错题讲评：把比较量当成单位“1”的题型",
@@ -70,6 +98,7 @@ const sampleLessons = [
     id: createId(),
     date: "2026-07-12",
     student: "张同学",
+    lessonNo: "第一课",
     topic: "阅读理解：概括段意与提取关键信息",
     content: "讲解段落中心句的寻找方法\n练习用关键词压缩长句\n区分事实信息和作者观点",
     questions: "阅读短文《桥》\n完成 4 道信息提取题\n讲评第 3 题：答案必须回到原文定位",
@@ -81,11 +110,12 @@ const sampleLessons = [
   },
 ];
 
-function normalizeLesson(lesson) {
+function normalizeLesson(lesson, index = 0) {
   return {
     id: lesson.id || createId(),
     date: lesson.date || new Date().toISOString().slice(0, 10),
     student: lesson.student || "未填写学生",
+    lessonNo: lesson.lessonNo || lesson.courseNo || lesson.lessonCount || defaultLessonNo(index),
     topic: lesson.topic || "未填写主题",
     content: lesson.content || "",
     questions: lesson.questions || "",
@@ -190,10 +220,11 @@ function renderLessons() {
     const node = template.content.firstElementChild.cloneNode(true);
     node.classList.toggle("open", index === 0);
     node.querySelector(".date").textContent = formatDate(lesson.date);
+    node.querySelector(".lesson-no").textContent = lesson.lessonNo;
     node.querySelector(".student").textContent = lesson.student;
     node.querySelector(".topic").textContent = lesson.topic;
     node.querySelector(".badge").textContent = lesson.status;
-    node.querySelector(".topicLine").textContent = lesson.topic;
+    node.querySelector(".topicLine").textContent = `${lesson.lessonNo} · ${lesson.topic}`;
     node.querySelector(".priorityLine").textContent = lesson.priority;
     fillList(node.querySelector(".content"), lesson.content);
     fillList(node.querySelector(".questions"), lesson.questions);
@@ -213,6 +244,7 @@ function renderLessons() {
       editingId = lesson.id;
       form.date.value = lesson.date;
       form.student.value = lesson.student;
+      form.lessonNo.value = lesson.lessonNo;
       form.topic.value = lesson.topic;
       form.content.value = lesson.content;
       form.questions.value = lesson.questions;
@@ -238,9 +270,10 @@ function renderLessons() {
 }
 
 function openFamilyReport(lesson) {
-  reportTitle.textContent = `${lesson.student} · ${lesson.topic}`;
+  reportTitle.textContent = `${lesson.student} · ${lesson.lessonNo} · ${lesson.topic}`;
   reportMeta.innerHTML = `
     <span>${formatDate(lesson.date)}</span>
+    <span>${escapeHtml(lesson.lessonNo)}</span>
     <span>本节课后反馈</span>
   `;
   reportStatus.innerHTML = `
@@ -281,6 +314,7 @@ function clearForm() {
   form.reset();
   form.status.value = "基本掌握";
   form.priority.value = "按时完成作业";
+  form.lessonNo.value = "第一课";
   form.date.valueAsDate = new Date();
   form.querySelector(".primary").textContent = "保存反馈";
 }
@@ -292,6 +326,7 @@ form.addEventListener("submit", (event) => {
     id: editingId || createId(),
     date: formData.get("date"),
     student: formData.get("student").trim(),
+    lessonNo: formData.get("lessonNo"),
     topic: formData.get("topic").trim(),
     content: formData.get("content").trim(),
     questions: formData.get("questions").trim(),

@@ -233,6 +233,10 @@ form {
   gap: 12px;
 }
 
+.lesson-meta-row {
+  grid-template-columns: 0.72fr 1.28fr;
+}
+
 label {
   display: grid;
   gap: 7px;
@@ -339,7 +343,7 @@ button:hover {
   width: 100%;
   min-height: 70px;
   display: grid;
-  grid-template-columns: 132px 76px minmax(0, 1fr) auto 24px;
+  grid-template-columns: 132px 74px 76px minmax(0, 1fr) auto 24px;
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
@@ -359,6 +363,19 @@ button:hover {
 
 .student {
   color: var(--blue);
+  font-weight: 900;
+}
+
+.lesson-no {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: rgba(244, 234, 213, 0.72);
+  color: #7a5416;
+  font-size: 13px;
   font-weight: 900;
 }
 
@@ -592,7 +609,7 @@ dialog::backdrop {
 
 @media (max-width: 1080px) {
   .lesson-toggle {
-    grid-template-columns: 142px minmax(0, 1fr) auto 28px;
+    grid-template-columns: 132px 74px minmax(0, 1fr) auto 28px;
   }
 
   .student {
@@ -671,6 +688,7 @@ dialog::backdrop {
   }
 
   .date,
+  .lesson-no,
   .student,
   .topic {
     grid-column: 1 / 2;
